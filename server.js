@@ -193,11 +193,12 @@ async function checkAndAlert() {
       const rm = calc(mon, base, now);
       if (rm === null) continue;
       
-      // Alert key to prevent duplicate
-      const cycle = mon.s > 0 ? Math.floor(now.getTime() / (mon.s * 1000)) : Math.floor(now.getTime() / 3600000);
-      const alertKey = monId + "_" + cycle;
+      // Alert key to prevent duplicate - based on monster + next spawn time
+      const base2 = kills[monId] != null ? kills[monId] : mEnd;
+      const spawnTime = mon.ft ? "fixed" : Math.floor((base2 + (Math.floor(((now - new Date(base2)) / 1000) / mon.s) + 1) * mon.s * 1000) / 60000);
+      const alertKey = monId + "_" + spawnTime;
       
-      if (rm <= ALERT_BEFORE && rm > ALERT_BEFORE - 35 && !alertsSent[alertKey]) {
+      if (rm <= ALERT_BEFORE && rm > 0 && !alertsSent[alertKey]) {
         alertsSent[alertKey] = true;
         const mins = Math.ceil(rm / 60);
         const title = `👑 ${mon.n} ${mins}분 후 출현!`;
