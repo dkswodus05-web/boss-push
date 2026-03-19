@@ -193,36 +193,39 @@ async function checkAndAlert() {
       const rm = calc(mon, base, now);
       if (rm === null) continue;
       
-      // Alert key to prevent duplicate - based on monster + next spawn time
-      const base2 = kills[monId] != null ? kills[monId] : mEnd;
-      const spawnTime = mon.ft ? "fixed" : Math.floor((base2 + (Math.floor(((now - new Date(base2)) / 1000) / mon.s) + 1) * mon.s * 1000) / 60000);
-      const alertKey = monId + "_" + spawnTime;
+      // Send alerts at 5min, 3min, 1min before spawn
+      const spawnMinute = Math.floor((now.getTime() + rm * 1000) / 60000);
+      const ALERT_TIMES = [300, 180, 60]; // 5min, 3min, 1min
       
-      if (rm <= ALERT_BEFORE && rm > 0 && !alertsSent[alertKey]) {
-        alertsSent[alertKey] = true;
-        const mins = Math.ceil(rm / 60);
-        const title = `👑 ${mon.n} ${mins}분 후 출현!`;
-        const body = `${mon.map} — ${mon.n}`;
-        
-        console.log(`[ALERT] ${title}`);
-        
-        // Send to each subscriber who watches this monster
-        for (const subKey of Object.keys(subscribers)) {
-          const sub = subscribers[subKey];
-          if (!sub || !sub.token) continue;
+      for (const alertAt of ALERT_TIMES) {
+        const alertKey = monId + "_" + spawnMinute + "_" + alertAt;
+        // Check if we're within 35s window of this alert time
+        if (rm <= alertAt && rm > alertAt - 35 && !alertsSent[alertKey]) {
+          alertsSent[alertKey] = true;
+          const mins = Math.ceil(rm / 60);
+          const title = `👑 ${mon.n} ${mins}분 후 출현!`;
+          const body = `${mon.map} — ${mon.n}`;
           
-          // Check watchList - only send if monster is in user's watchList
-          const watchList = sub.watchList;
-          if (!watchList || !watchList[monId]) continue;
+          console.log(`[ALERT] ${title}`);
           
-          try {
-            await sendPush(sub.token, title, body);
-            console.log(`  → Sent to ${subKey.substring(0, 8)}...`);
-          } catch (e) {
-            console.log(`  → Error: ${e.message}`);
+          // Send to each subscriber who watches this monster
+          for (const subKey of Object.keys(subscribers)) {
+            const sub = subscribers[subKey];
+            if (!sub || !sub.token) continue;
+            
+            // Check watchList - only send if monster is in user's watchList
+            const watchList = sub.watchList;
+            if (!watchList || !watchList[monId]) continue;
+            
+            try {
+              await sendPush(sub.token, title, body);
+              console.log(`  → Sent to ${subKey.substring(0, 8)}...`);
+            } catch (e) {
+              console.log(`  → Error: ${e.message}`);
+            }
           }
         }
-      }
+      } // end ALERT_TIMES loop
     }
     
     // Clean old alert keys
