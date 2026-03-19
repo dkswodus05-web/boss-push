@@ -195,14 +195,15 @@ async function checkAndAlert() {
       
       // Send alerts at 5min, 3min, 1min before spawn
       const spawnMinute = Math.floor((now.getTime() + rm * 1000) / 60000);
-      const ALERT_TIMES = [300, 180, 60]; // 5min, 3min, 1min
+      const ALERT_TIMES = [330, 210, 90]; // 5분30초, 3분30초, 1분30초
+      const ALERT_LABELS = [5, 3, 1]; // 표시는 5분, 3분, 1분
       
-      for (const alertAt of ALERT_TIMES) {
+      for (let ai = 0; ai < ALERT_TIMES.length; ai++) {
+        const alertAt = ALERT_TIMES[ai];
+        const alertMin = ALERT_LABELS[ai];
         const alertKey = monId + "_" + spawnMinute + "_" + alertAt;
-        // Check if we're within 45s window of this alert time
-        if (rm <= alertAt && rm > alertAt - 45 && !alertsSent[alertKey]) {
+        if (rm <= alertAt && rm > alertAt - 30 && !alertsSent[alertKey]) {
           alertsSent[alertKey] = true;
-          const alertMin = Math.round(alertAt / 60);
           const title = `${mon.map} — ${mon.n}`;
           const body = `${mon.n} ${alertMin}분 후 출현!`;
           
