@@ -210,15 +210,9 @@ async function checkAndAlert() {
           const sub = subscribers[subKey];
           if (!sub || !sub.token) continue;
           
-          // Check watchList - if no watchList, send all boss alerts
+          // Check watchList - only send if monster is in user's watchList
           const watchList = sub.watchList;
-          if (watchList) {
-            // User has a watchList - only send if monster is in it
-            if (!watchList[monId]) continue;
-          } else {
-            // No watchList = only send boss alerts by default
-            if (mon.t !== "boss") continue;
-          }
+          if (!watchList || !watchList[monId]) continue;
           
           try {
             await sendPush(sub.token, title, body);
