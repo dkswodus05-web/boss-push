@@ -114,9 +114,9 @@ async function sendPush(token, title, body) {
   const payload = JSON.stringify({
     message: {
       token: token,
-      notification: { title, body },
-      android: { priority: "high", notification: { sound: "default", channel_id: "boss_alert" } },
-      webpush: { notification: { icon: "/icon-192x192.png", badge: "/icon-192x192.png", vibrate: [200, 100, 200], tag: "boss", renotify: true } }
+      data: { title, body, icon: "/icon-192x192.png" },
+      android: { priority: "high" },
+      webpush: { headers: { Urgency: "high" } }
     }
   });
   
