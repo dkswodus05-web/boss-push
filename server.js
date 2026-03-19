@@ -73,7 +73,7 @@ async function getAccessToken() {
   const header = base64url(Buffer.from(JSON.stringify({ alg: "RS256", typ: "JWT" })));
   const payload = base64url(Buffer.from(JSON.stringify({
     iss: SERVICE_ACCOUNT.client_email,
-    scope: "https://www.googleapis.com/auth/firebase.messaging",
+    scope: "https://www.googleapis.com/auth/firebase.messaging https://www.googleapis.com/auth/cloud-platform",
     aud: "https://oauth2.googleapis.com/token",
     iat: now,
     exp: now + 3600
@@ -129,9 +129,14 @@ async function sendPush(token, title, body) {
     }, res => {
       let data = '';
       res.on('data', c => data += c);
-      res.on('end', () => resolve(data));
+      res.on('end', () => {
+        if (res.statusCode >= 400) {
+          console.log(`  !! FCM HTTP ${res.statusCode}: ${data.substring(0, 200)}`);
+        }
+        resolve({ status: res.statusCode, body: data });
+      });
     });
-    req.on('error', reject);
+    req.on('error', e => { console.log("  !! FCM request error:", e.message); reject(e); });
     req.write(payload);
     req.end();
   });
@@ -242,7 +247,30 @@ checkAndAlert();
 
 // Health check server for Render.com
 const http = require('http');
-http.createServer((req, res) => {
+http.createServer(async (req, res) => {
+  if (req.url === '/test') {
+    // Manually send a test push to all registered tokens
+    try {
+      const data = await fbFetch("fcm_tokens");
+      if (!data) { res.writeHead(200); res.end("No tokens"); return; }
+      let results = [];
+      for (const key of Object.keys(data)) {
+        const sub = data[key];
+        if (!sub || !sub.token) continue;
+        try {
+          const r = await sendPush(sub.token, "👑 테스트 알림!", "보스 타이머 알림이 정상 작동합니다!");
+          results.push(key.substring(0, 8) + ": " + (r.status || "?") + " " + (r.body || "").substring(0, 100));
+        } catch (e) {
+          results.push(key.substring(0, 8) + ": ERROR " + e.message);
+        }
+      }
+      res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end("Test results:\n" + results.join("\n"));
+    } catch (e) {
+      res.writeHead(500); res.end("Error: " + e.message);
+    }
+    return;
+  }
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.end(`Boss push server running. Monitoring ${Object.keys(allMons).length} monsters. Token: ${accessToken ? 'OK' : 'pending'}`);
 }).listen(process.env.PORT || 3000, () => {
