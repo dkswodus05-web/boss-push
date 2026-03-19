@@ -184,7 +184,11 @@ async function checkAndAlert() {
     const subscribers = data.fcm_tokens || {};
     
     const now = new Date();
-    const mEnd = new Date(now.getFullYear(), (settings.mo || now.getMonth() + 1) - 1, settings.da || now.getDate(), settings.hr || 6, settings.mn || 0, 0, 0).getTime();
+    // Settings are in KST (UTC+9), but server runs in UTC
+    // Create mEnd in KST then convert: subtract 9 hours to get UTC timestamp
+    const KST_OFFSET = 9 * 60 * 60 * 1000; // 9 hours in ms
+    const mEndKST = new Date(now.getFullYear(), (settings.mo || now.getMonth() + 1) - 1, settings.da || now.getDate(), settings.hr || 6, settings.mn || 0, 0, 0);
+    const mEnd = mEndKST.getTime() - KST_OFFSET;
     
     // For each monster, check if alert needed
     for (const monId of Object.keys(allMons)) {
@@ -205,7 +209,7 @@ async function checkAndAlert() {
         if (rm <= alertAt && rm > alertAt - 30 && !alertsSent[alertKey]) {
           alertsSent[alertKey] = true;
           const title = `${mon.map} — ${mon.n}`;
-          const body = `${mon.n} ${alertMin}분 후 출현!`;
+          const body = `👑 ${mon.n} ${alertMin}분 후 출현!`;
           
           console.log(`[ALERT] ${title}`);
           
