@@ -251,6 +251,31 @@ checkAndAlert();
 // Health check server for Render.com
 const http = require('http');
 http.createServer(async (req, res) => {
+  if (req.url === '/status') {
+    try {
+      const data = await fbFetch("fcm_tokens");
+      if (!data) { res.writeHead(200, {'Content-Type':'text/plain; charset=utf-8'}); res.end("등록된 사용자 없음"); return; }
+      const keys = Object.keys(data);
+      let out = `👑 킹덤길드 보스 타이머 - 알림 현황\n`;
+      out += `총 ${keys.length}명 등록\n\n`;
+      for (let i = 0; i < keys.length; i++) {
+        const sub = data[keys[i]];
+        const wl = sub.watchList;
+        const monNames = [];
+        if (wl) {
+          for (const mid of Object.keys(wl)) {
+            if (allMons[mid]) monNames.push(allMons[mid].n + " (" + allMons[mid].map + ")");
+            else monNames.push(mid);
+          }
+        }
+        out += `#${i+1} ${keys[i].substring(0,8)}...\n`;
+        out += `   알림: ${monNames.length > 0 ? monNames.join(", ") : "설정 안 함"}\n\n`;
+      }
+      res.writeHead(200, {'Content-Type':'text/plain; charset=utf-8'});
+      res.end(out);
+    } catch(e) { res.writeHead(500); res.end("Error: "+e.message); }
+    return;
+  }
   if (req.url === '/test') {
     // Manually send a test push to all registered tokens
     try {
