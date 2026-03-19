@@ -209,7 +209,7 @@ async function checkAndAlert() {
         if (rm <= alertAt && rm > alertAt - 30 && !alertsSent[alertKey]) {
           alertsSent[alertKey] = true;
           const title = `${mon.map} — ${mon.n}`;
-          const body = `👑 ${mon.n} ${alertMin}분 후 출현!`;
+          const body = `${mon.n} ${alertMin}분 후 출현!`;
           
           console.log(`[ALERT] ${title}`);
           
