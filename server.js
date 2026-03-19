@@ -199,12 +199,12 @@ async function checkAndAlert() {
       
       for (const alertAt of ALERT_TIMES) {
         const alertKey = monId + "_" + spawnMinute + "_" + alertAt;
-        // Check if we're within 35s window of this alert time
-        if (rm <= alertAt && rm > alertAt - 35 && !alertsSent[alertKey]) {
+        // Check if we're within 45s window of this alert time
+        if (rm <= alertAt && rm > alertAt - 45 && !alertsSent[alertKey]) {
           alertsSent[alertKey] = true;
-          const mins = Math.ceil(rm / 60);
-          const title = `👑 ${mon.n} ${mins}분 후 출현!`;
-          const body = `${mon.map} — ${mon.n}`;
+          const alertMin = Math.round(alertAt / 60);
+          const title = `${mon.map} — ${mon.n}`;
+          const body = `${mon.n} ${alertMin}분 후 출현!`;
           
           console.log(`[ALERT] ${title}`);
           
